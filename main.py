@@ -10,16 +10,23 @@ logger = logging.getLogger(__name__)
 
 class Bot:
     def __init__(self):
-        token = os.getenv('telegram_token')
-        if token is None:
+        self.token = os.getenv('telegram_token')
+        if self.token is None:
             logger.error('Set "telegram_token" environment variable.')
             logger.error('export telegram_token=example_token')
             exit(os.EX_CONFIG)
-        self.updater = Updater(token, use_context=True)
+        self.updater = Updater(self.token, use_context=True)
         self.set_commands_handlers()
     
-    def run(self):
+    def local_run(self):
         self.updater.start_polling()
+        self.updater.idle()
+    
+    def web_run(self):
+        self.updater.start_webhook(listen="0.0.0.0",
+                            port=int(os.environ.get("PORT", 33507)),
+                            url_path=self.token)
+        self.updater.bot.setWebhook("https://colykxer-bot.herokuapp.com/{}".format(self.token))
         self.updater.idle()
 
     def text_to_channel(self, chat_id, text):
@@ -49,4 +56,4 @@ class Bot:
 
 if __name__ == '__main__':
     bot = Bot()
-    bot.run()
+    bot.local_run()
