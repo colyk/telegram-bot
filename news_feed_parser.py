@@ -3,6 +3,14 @@ from xml.dom import minidom
 from typing import List
 from pprint import pprint
 
+import re
+
+TAG_RE = re.compile(r"<[^>]+>")
+
+
+def remove_tags(text):
+    return TAG_RE.sub("", text)
+
 
 def parse_habr() -> List[dict]:
     url = "https://habr.com/ru/rss/best/daily/?fl=ru"
@@ -19,6 +27,7 @@ def parse_habr() -> List[dict]:
             target_data = []
             for sub_el in target_elements:
                 sub_data = sub_el.firstChild.data.strip()
+                sub_data = remove_tags(sub_data)
                 target_data.append(sub_data)
 
             target_info[target] = (
