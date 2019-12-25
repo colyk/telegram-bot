@@ -59,7 +59,8 @@ class Bot:
     def on_habr(self, update, context):
         news = parse_habr()[0]
         response = self.news_format.format(**news)
-        categories = ('<i>#{}</i> ' * len(news['category'])).format(*news['category'])
+        categories = list(map(lambda c: '_'.join(c.split()),news['category']))
+        categories = ('<i>#{}</i> ' * len(categories)).format(*categories)
         categories = '\n\n' + categories
         response += categories
         update.message.reply_text(text=response, parse_mode=telegram.ParseMode.HTML)
