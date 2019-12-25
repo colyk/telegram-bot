@@ -55,6 +55,7 @@ class Bot:
 
     def on_start(self, update, context):
         update.message.reply_text("on /start")
+        self.on_habr(update, context)
 
     def on_habr(self, update, context):
         news = parse_habr()[0]
@@ -66,7 +67,7 @@ class Bot:
         update.message.reply_text(text=response, parse_mode=telegram.ParseMode.HTML)
 
     def on_help(self, update, context):
-        update.message.reply_text("on /help")
+        update.message.reply_text("/habr - last news from habr.com")
 
     def on_unknown(self, update, context):
         update.message.reply_text(f'on unknown command "{update.message.text}"')
