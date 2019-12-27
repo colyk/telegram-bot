@@ -2,7 +2,7 @@ import logging
 import os
 
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
-from news_feed_parser import parse_habr
+from feed import Feed
 import telegram
 
 logging.basicConfig(
@@ -22,9 +22,9 @@ class Bot:
         self.updater = Updater(self.token, use_context=True)
         self.set_commands_handlers()
 
-        self.news_format = (
-            "<b>{title}</b>\n{description}\n\n{link}"
-        )
+        self.feed = Feed()
+
+        self.news_format = "<b>{title}</b>\n{description}\n\n{link}"
 
     def local_run(self):
         self.updater.start_polling()
@@ -49,6 +49,7 @@ class Bot:
         dp.add_handler(CommandHandler("start", self.on_start))
         dp.add_handler(CommandHandler("help", self.on_help))
         dp.add_handler(CommandHandler("habr", self.on_habr))
+        dp.add_handler(CommandHandler("nuancesprog", self.on_nuancesprog))
 
         dp.add_handler(MessageHandler(Filters.text, self.on_unknown))
         dp.add_error_handler(self.on_error)
@@ -57,17 +58,34 @@ class Bot:
         update.message.reply_text("on /start")
         self.on_habr(update, context)
 
-    def on_habr(self, update, context):
-        news = parse_habr()[0]
+    def on_nuancesprog(self, update, context):
+        news = self.feed.get_nuancesprog_feed()[0]
+        news["description"] = news["description"].split("\n")[0]
         response = self.news_format.format(**news)
-        categories = list(map(lambda c: '_'.join(c.split()),news['category']))
-        categories = ('<i>#{}</i> ' * len(categories)).format(*categories)
-        categories = '\n\n' + categories
+        categories = self.format_categories(news["category"])
         response += categories
         update.message.reply_text(text=response, parse_mode=telegram.ParseMode.HTML)
 
+    def on_habr(self, update, context):
+        news = self.feed.get_habr_feed()[0]
+        news["description"] = news["description"].split("\n")[0]
+        response = self.news_format.format(**news)
+        categories = self.format_categories(news["category"])
+        response += categories
+        update.message.reply_text(text=response, parse_mode=telegram.ParseMode.HTML)
+
+    def format_categories(self, categories):
+        categories = list(map(lambda c: "_".join(c.split()), categories))
+        categories = list(map(lambda c: "_".join(c.split("-")), categories))
+        categories = ("<i>#{}</i> " * len(categories)).format(*categories)
+        return "\n\n" + categories
+
     def on_help(self, update, context):
-        update.message.reply_text("/habr - last news from habr.com")
+        help_text = (
+            "/habr - last news from habr.com\n"
+            "/nuancesprog - last news from nuancesprog.ru"
+        )
+        update.message.reply_text(help_text)
 
     def on_unknown(self, update, context):
         update.message.reply_text(f'on unknown command "{update.message.text}"')
