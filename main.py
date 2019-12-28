@@ -12,6 +12,16 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+def send_typing_action(func):
+    def wrapper(self, update, context):
+        context.bot.send_chat_action(
+            chat_id=update.message.chat_id, action=telegram.ChatAction.TYPING
+        )
+        func(self, update, context)
+
+    return wrapper
+
+
 class Bot:
     def __init__(self):
         self.token = os.getenv("telegram_token")
@@ -68,20 +78,17 @@ class Bot:
         update.message.reply_text("on /start")
         self.on_habr(update, context)
 
+    @send_typing_action
     def on_nuancesprog(self, update, context):
         news = self.feed.get_nuancesprog_feed()[0]
-        news["description"] = news["description"].split("\n")[0]
-        response = self.news_format.format(**news)
-        categories = self.format_categories(news["category"])
-        response += categories
-        update.message.reply_text(
-            text=response,
-            reply_markup=self.keyboard_markup,
-            parse_mode=telegram.ParseMode.HTML,
-        )
+        self.on_feed(news, update, context)
 
+    @send_typing_action
     def on_habr(self, update, context):
         news = self.feed.get_habr_feed()[0]
+        self.on_feed(news, update, context)
+
+    def on_feed(self, news, update, context):
         news["description"] = news["description"].split("\n")[0]
         response = self.news_format.format(**news)
         categories = self.format_categories(news["category"])
