@@ -1,6 +1,6 @@
 import logging
 import os
-
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from feed import Feed
 import telegram
@@ -25,6 +25,15 @@ class Bot:
         self.feed = Feed()
 
         self.news_format = "<b>{title}</b>\n{description}\n\n{link}"
+
+        keyboard = [
+            [
+                InlineKeyboardButton("👎", callback_data="1"),
+                InlineKeyboardButton("👍", callback_data="2"),
+            ]
+        ]
+
+        self.keyboard_markup = InlineKeyboardMarkup(keyboard)
 
     def local_run(self):
         self.updater.start_polling()
@@ -64,7 +73,11 @@ class Bot:
         response = self.news_format.format(**news)
         categories = self.format_categories(news["category"])
         response += categories
-        update.message.reply_text(text=response, parse_mode=telegram.ParseMode.HTML)
+        update.message.reply_text(
+            text=response,
+            reply_markup=self.keyboard_markup,
+            parse_mode=telegram.ParseMode.HTML,
+        )
 
     def on_habr(self, update, context):
         news = self.feed.get_habr_feed()[0]
@@ -72,7 +85,11 @@ class Bot:
         response = self.news_format.format(**news)
         categories = self.format_categories(news["category"])
         response += categories
-        update.message.reply_text(text=response, parse_mode=telegram.ParseMode.HTML)
+        update.message.reply_text(
+            text=response,
+            reply_markup=self.keyboard_markup,
+            parse_mode=telegram.ParseMode.HTML,
+        )
 
     def format_categories(self, categories):
         categories = list(map(lambda c: "_".join(c.split()), categories))
