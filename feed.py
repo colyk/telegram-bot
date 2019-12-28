@@ -1,9 +1,13 @@
-import requests
-from xml.dom import minidom
-from typing import List, Dict
-from pprint import pprint
-import unicodedata
 import re
+import unicodedata
+from multiprocessing import Pool
+from pprint import pprint
+from typing import Dict, List
+from xml.dom import minidom
+
+import requests
+
+__all__ = ["Feed"]
 
 
 class Feed:
@@ -19,21 +23,23 @@ class Feed:
 
     def get_habr_feed(self) -> List[Dict]:
         url = self.resources["habr"]
-        rss = self._fetch_rss(url)
-        habr_feed = self._parse_rss(rss)
-        return habr_feed
+        return self._get_feed(url)
 
     def get_nuancesprog_feed(self) -> List[Dict]:
         url = self.resources["nuancesprog"]
-        rss = self._fetch_rss(url)
-        nuancesprog_feed = self._parse_rss(rss)
-        return nuancesprog_feed
+        return self._get_feed(url)
 
     def get_proglib_feed(self) -> List[Dict]:
         url = self.resources["proglib"]
+        return self._get_feed(url)
+
+    def get_feeds(self):
+        p = Pool(len(self.resources))
+        return p.map(self._get_feed, self.resources.values())
+
+    def _get_feed(self, url: str) -> List[Dict]:
         rss = self._fetch_rss(url)
-        proglib_feed = self._parse_rss(rss)
-        return proglib_feed
+        return self._parse_rss(rss)
 
     def _fetch_rss(self, url: str) -> str:
         r = requests.get(url)
@@ -56,13 +62,13 @@ class Feed:
             target_data = []
             for sub_el in target_elements:
                 sub_data = sub_el.firstChild.data.strip()
-                sub_data = self.normalize(sub_data)
+                sub_data = self._normalize(sub_data)
                 target_data.append(sub_data)
 
             news_info[target] = target_data[0] if len(target_data) == 1 else target_data
         return news_info
 
-    def normalize(self, text: str) -> str:
+    def _normalize(self, text: str) -> str:
         new_text = unicodedata.normalize("NFKD", text)
         return self.TAG_RE.sub("", new_text)
 
@@ -77,6 +83,9 @@ def main():
 
     proglib_feed = feed.get_proglib_feed()
     pprint(proglib_feed)
+
+    feeds = feed.get_feeds()
+    pprint(feeds)
 
 
 if __name__ == "__main__":

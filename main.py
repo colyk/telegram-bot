@@ -1,9 +1,10 @@
 import logging
 import os
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
-from feed import Feed
+
 import telegram
+from telegram.ext import CommandHandler, Filters, MessageHandler, Updater
+
+from feed import Feed
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -28,12 +29,12 @@ class Bot:
 
         keyboard = [
             [
-                InlineKeyboardButton("👎", callback_data="1"),
-                InlineKeyboardButton("👍", callback_data="2"),
+                telegram.InlineKeyboardButton("👎", callback_data="1"),
+                telegram.InlineKeyboardButton("👍", callback_data="2"),
             ]
         ]
 
-        self.keyboard_markup = InlineKeyboardMarkup(keyboard)
+        self.keyboard_markup = telegram.InlineKeyboardMarkup(keyboard)
 
     def local_run(self):
         self.updater.start_polling()
